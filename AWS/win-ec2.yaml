@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates Ec2 Instance in a Default VPC 
+Parameters:
+  pWinAMI:
+    Type: String 
+    Default: 'ami-0088977e66ac3915d'
+  pInstanceType:
+    Type: String 
+    Default: 't2.micro'
+  pKeyName:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: naren-dev-kp
+  pSG:
+    Type: String 
+    Default: 'sg-00d7be38882f8502a'
+
+Resources:
+  rEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref pWinAMI
+      InstanceType: !Ref pInstanceType
+      KeyName: !Ref pKeyName
+      SecurityGroupIds: 
+        - !Ref pSG
+      SubnetId: 'subnet-70c96216'
+      Tags:
+        - Key: Name 
+          Value: Win2016-instance
+      UserData: 
+        !Base64 |
+          <script>
+          Set-Location "C:\Windows\system32"
+          #Change TimeZone
+          C:\Windows\System32\tzutil /s "AUS Eastern Standard Time"
+          #Install Chrome 
+          $Path = $env:TEMP;
+          $Installer = "chrome_installer.exe";
+          Invoke-WebRequest "http://dl.google.com/chrome/install/375.126/chrome_installer.exe" -OutFile     $Path\$Installer; 
+          Start-Process -FilePath $Path\$Installer -ArgumentList "/silent /install" -Verb RunAs -Wait;
+          Remove-Item $Path\$Installer
+          #Set Chrome as default browser
+          $chromePath = "${Env:ProgramFiles(x86)}\Google\Chrome\Application\" 
+          $chromeApp = "chrome.exe"
+          $chromeCommandArgs = "--make-default-browser"
+          & "$chromePath$chromeApp" $chromeCommandArgs
+          </script>
+
